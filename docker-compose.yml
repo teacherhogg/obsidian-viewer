@@ -1,0 +1,34 @@
+services:
+
+  watcher:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env
+    restart: always
+    volumes:
+      # ── Pair 1 ──────────────────────────────────────────────────────────────
+      - ${PAIR_1_INPUT}:/inputs/1:ro
+      - ${PAIR_1_OUTPUT}:/outputs/1
+      # ── Pair 2 (uncomment and duplicate for additional vaults) ─────────────
+      - ${PAIR_2_INPUT}:/inputs/2:ro
+      - ${PAIR_2_OUTPUT}:/outputs/2
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    env_file: .env
+    restart: always
+    volumes:
+      # ── Pair 1 ──────────────────────────────────────────────────────────────
+      - ${PAIR_1_OUTPUT}:/sites/1:ro
+      # ── Pair 2 ────────────────────────────────────────────────────────────
+      - ${PAIR_2_OUTPUT}:/sites/2:ro
+    ports:
+      # ── Pair 1 ──────────────────────────────────────────────────────────────
+      - "${PAIR_1_PORT}:${PAIR_1_PORT}"
+      # ── Pair 2 ────────────────────────────────────────────────────────────
+      - "${PAIR_2_PORT}:${PAIR_2_PORT}"
+    depends_on:
+      - watcher
