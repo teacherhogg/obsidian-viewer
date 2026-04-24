@@ -22,6 +22,20 @@
       --tag-text: #89dceb;
     }
 
+    html.light {
+      --bg: #eff1f5;
+      --bg-sidebar: #e6e9ef;
+      --bg-hover: #ccd0da;
+      --bg-active: #bcc0cc;
+      --text: #4c4f69;
+      --text-muted: #8c8fa1;
+      --text-heading: #8839ef;
+      --accent: #1e66f5;
+      --border: #ccd0da;
+      --tag-bg: #ccd0da;
+      --tag-text: #179299;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: var(--bg);
@@ -31,6 +45,7 @@
       overflow: hidden;
     }
 
+    /* ── Sidebar ── */
     #sidebar {
       width: var(--sidebar-width);
       min-width: var(--sidebar-width);
@@ -39,21 +54,51 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      flex-shrink: 0;
+      transition: width 0.2s ease, min-width 0.2s ease;
     }
 
     #sidebar-header {
-      padding: 14px 16px;
+      padding: 12px 10px 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    #vault-name {
       font-weight: 700;
       font-size: 0.85rem;
       letter-spacing: 0.06em;
       text-transform: uppercase;
       color: var(--text-muted);
-      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
     }
+
+    .header-btns { display: flex; gap: 2px; flex-shrink: 0; }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+    }
+    .icon-btn:hover { background: var(--bg-hover); color: var(--text); }
 
     #sidebar-search {
       padding: 8px 10px;
       border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
     }
 
     #sidebar-search input {
@@ -66,8 +111,26 @@
       padding: 5px 8px;
       outline: none;
     }
-
     #sidebar-search input::placeholder { color: var(--text-muted); }
+
+    #tree-controls {
+      display: flex;
+      gap: 4px;
+      padding: 5px 10px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    #tree-controls button {
+      flex: 1;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 3px 0;
+      border-radius: 4px;
+      font-size: 0.7rem;
+    }
+    #tree-controls button:hover { background: var(--bg-hover); color: var(--text); border-color: var(--text-muted); }
 
     #sidebar-tree {
       overflow-y: auto;
@@ -109,6 +172,77 @@
     .tree-children { display: none; }
     .tree-children.open { display: block; }
 
+    /* ── Desktop sidebar collapse ── */
+    #sidebar-reopen-btn {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: 20px;
+      z-index: 10;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background: var(--bg-sidebar);
+      border: none;
+      border-right: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+    #sidebar-reopen-btn:hover { background: var(--bg-hover); color: var(--text); }
+
+    @media (min-width: 769px) {
+      body.sidebar-collapsed #sidebar { width: 0; min-width: 0; border-right: none; }
+      body.sidebar-collapsed #sidebar-reopen-btn { display: flex; }
+    }
+
+    /* ── Mobile overlay ── */
+    #mobile-toggle-btn { display: none; }
+
+    #sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 150;
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    @media (max-width: 768px) {
+      #mobile-toggle-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        z-index: 100;
+        background: var(--bg-sidebar);
+        border: 1px solid var(--border);
+        color: var(--text);
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1.1rem;
+      }
+
+      #sidebar {
+        position: fixed;
+        left: 0; top: 0;
+        height: 100%;
+        z-index: 200;
+        width: var(--sidebar-width);
+        min-width: var(--sidebar-width);
+        transform: translateX(calc(-1 * var(--sidebar-width) - 2px));
+        transition: transform 0.25s ease;
+      }
+
+      body.sidebar-open #sidebar { transform: translateX(0); }
+      body.sidebar-open #sidebar-overlay { display: block; }
+
+      #main { padding-top: 56px; }
+    }
+
+    /* ── Main area ── */
     #main {
       flex: 1;
       display: flex;
@@ -128,9 +262,23 @@
   </style>
 </head>
 <body>
+  <div id="sidebar-overlay"></div>
+  <button id="mobile-toggle-btn" aria-label="Open navigation">☰</button>
+  <button id="sidebar-reopen-btn" aria-label="Expand sidebar">›</button>
+
   <nav id="sidebar">
-    <div id="sidebar-header">{{VAULT_NAME}}</div>
+    <div id="sidebar-header">
+      <span id="vault-name">{{VAULT_NAME}}</span>
+      <div class="header-btns">
+        <button class="icon-btn" id="theme-toggle-btn" title="Toggle theme">☀</button>
+        <button class="icon-btn" id="sidebar-close-btn" title="Collapse sidebar">‹</button>
+      </div>
+    </div>
     <div id="sidebar-search"><input type="text" id="search-input" placeholder="Search files…" autocomplete="off"></div>
+    <div id="tree-controls">
+      <button id="expand-all-btn" title="Expand all folders">Expand all</button>
+      <button id="collapse-all-btn" title="Collapse all folders">Collapse all</button>
+    </div>
     <div id="sidebar-tree">Loading…</div>
   </nav>
 
@@ -142,6 +290,55 @@
   <script>
     const ROOT_PREFIX = '{{ROOT_PREFIX}}';
 
+    // ── Theme ──
+    const themeBtn = document.getElementById('theme-toggle-btn');
+    function applyTheme(dark) {
+      document.documentElement.classList.toggle('light', !dark);
+      themeBtn.textContent = dark ? '☀' : '🌙';
+    }
+    applyTheme(localStorage.getItem('theme') !== 'light');
+    themeBtn.addEventListener('click', () => {
+      const nowLight = document.documentElement.classList.toggle('light');
+      themeBtn.textContent = nowLight ? '🌙' : '☀';
+      localStorage.setItem('theme', nowLight ? 'light' : 'dark');
+    });
+
+    // ── Sidebar toggle ──
+    function isMobile() { return window.innerWidth <= 768; }
+
+    function openSidebar() {
+      if (isMobile()) document.body.classList.add('sidebar-open');
+      else document.body.classList.remove('sidebar-collapsed');
+    }
+    function closeSidebar() {
+      if (isMobile()) {
+        document.body.classList.remove('sidebar-open');
+      } else {
+        document.body.classList.add('sidebar-collapsed');
+        localStorage.setItem('sidebarCollapsed', '1');
+      }
+    }
+
+    document.getElementById('sidebar-close-btn').addEventListener('click', closeSidebar);
+    document.getElementById('mobile-toggle-btn').addEventListener('click', openSidebar);
+    document.getElementById('sidebar-overlay').addEventListener('click', closeSidebar);
+    document.getElementById('sidebar-reopen-btn').addEventListener('click', openSidebar);
+
+    if (!isMobile() && localStorage.getItem('sidebarCollapsed') === '1') {
+      document.body.classList.add('sidebar-collapsed');
+    }
+
+    // ── Expand / Collapse all ──
+    document.getElementById('expand-all-btn').addEventListener('click', () => {
+      document.querySelectorAll('.tree-children').forEach(el => el.classList.add('open'));
+      document.querySelectorAll('.tree-toggle').forEach(el => el.style.transform = 'rotate(90deg)');
+    });
+    document.getElementById('collapse-all-btn').addEventListener('click', () => {
+      document.querySelectorAll('.tree-children').forEach(el => el.classList.remove('open'));
+      document.querySelectorAll('.tree-toggle').forEach(el => el.style.transform = '');
+    });
+
+    // ── Navigation ──
     async function loadNav() {
       try {
         const res = await fetch(ROOT_PREFIX + '_nav.json');
@@ -152,7 +349,7 @@
       }
     }
 
-    function buildTree(node, depth) {
+    function buildTree(node, depth, forceOpen) {
       const div = document.createElement('div');
       div.className = 'tree-node';
       div.style.paddingLeft = (depth * 14) + 'px';
@@ -170,11 +367,16 @@
             const open = children.classList.toggle('open');
             item.querySelector('.tree-toggle').style.transform = open ? 'rotate(90deg)' : '';
           });
-          for (const child of node.children) children.appendChild(buildTree(child, depth + 1));
+          for (const child of node.children) children.appendChild(buildTree(child, depth + 1, forceOpen));
         }
 
         div.appendChild(item);
         div.appendChild(children);
+
+        if (forceOpen) {
+          children.classList.add('open');
+          item.querySelector('.tree-toggle').style.transform = 'rotate(90deg)';
+        }
 
       } else if (node.type === 'file') {
         const a = document.createElement('a');
@@ -185,7 +387,7 @@
         div.appendChild(a);
 
       } else if (depth === 0) {
-        for (const child of (node.children || [])) div.appendChild(buildTree(child, depth + 1));
+        for (const child of (node.children || [])) div.appendChild(buildTree(child, depth + 1, forceOpen));
       }
 
       return div;
@@ -209,7 +411,7 @@
       if (!data) { container.textContent = 'Navigation unavailable'; return; }
       const filtered = query ? filterTree(data, query.toLowerCase()) : data;
       container.innerHTML = '';
-      if (filtered) container.appendChild(buildTree(filtered, 0));
+      if (filtered) container.appendChild(buildTree(filtered, 0, !!query));
     }
 
     document.getElementById('search-input').addEventListener('input', e => {
