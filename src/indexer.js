@@ -12,10 +12,10 @@ function getTemplate() {
   return indexTemplate;
 }
 
-const SKIP = new Set(['_nav.json', 'index.html']);
+const SKIP = new Set(['_nav.json', 'index.html', '_new_files.json']);
 const MD_HIDDEN = /^\./; // skip dot files/dirs
 
-async function buildTree(dir, rootDir) {
+async function buildTree(dir, rootDir, newFilesSet) {
   const entries = await fs.readdir(dir, { withFileTypes: true });
   const children = [];
 
@@ -24,12 +24,17 @@ async function buildTree(dir, rootDir) {
 
     const absPath = path.join(dir, entry.name);
     const relPath = path.relative(rootDir, absPath);
+    const relPathNorm = relPath.replace(/\\/g, '/');
 
     if (entry.isDirectory()) {
-      const subChildren = await buildTree(absPath, rootDir);
-      children.push({ name: entry.name, path: relPath, type: 'dir', children: subChildren });
+      const subChildren = await buildTree(absPath, rootDir, newFilesSet);
+      const node = { name: entry.name, path: relPath, type: 'dir', children: subChildren };
+      if (newFilesSet && subChildren.some(c => c.isNew)) node.isNew = true;
+      children.push(node);
     } else if (entry.isFile()) {
-      children.push({ name: entry.name, path: relPath, type: 'file' });
+      const node = { name: entry.name, path: relPath, type: 'file' };
+      if (newFilesSet && newFilesSet.has(relPathNorm)) node.isNew = true;
+      children.push(node);
     }
   }
 
@@ -37,7 +42,15 @@ async function buildTree(dir, rootDir) {
 }
 
 async function regenerate(vaultOutputRoot, vaultName) {
-  const tree = await buildTree(vaultOutputRoot, vaultOutputRoot);
+  let newFilesSet = null;
+  try {
+    const list = await fs.readJson(path.join(vaultOutputRoot, '_new_files.json'));
+    newFilesSet = new Set(list.map(p => p.replace(/\\/g, '/')));
+  } catch {
+    // No new files data yet; proceed without marking
+  }
+
+  const tree = await buildTree(vaultOutputRoot, vaultOutputRoot, newFilesSet);
   const nav = { name: vaultName, path: '', type: 'dir', children: tree };
 
   await fs.writeFile(path.join(vaultOutputRoot, '_nav.json'), JSON.stringify(nav, null, 2), 'utf8');

@@ -3,6 +3,7 @@
 const chokidar = require('chokidar');
 const { regenerate } = require('./indexer');
 const { handleAdd, handleChange, handleUnlink, handleAddDir, handleUnlinkDir } = require('./sync');
+const { runScanIfDue } = require('./newfiles');
 
 function buildIgnored(ignoreFolders) {
   // Match any path segment that exactly equals a folder in the ignore list.
@@ -13,7 +14,7 @@ function buildIgnored(ignoreFolders) {
   };
 }
 
-function startWatcher(pair, ignoreFolders) {
+function startWatcher(pair, ignoreFolders, newFilesDays) {
   const watcher = chokidar.watch(pair.input, {
     persistent: true,
     ignoreInitial: false,
@@ -42,6 +43,7 @@ function startWatcher(pair, ignoreFolders) {
       // Regenerate nav on every structural change after startup.
       // During initial scan, a single bulk regeneration runs after 'ready'.
       if (initialScanDone && (event === 'add' || event === 'change' || event === 'unlink' || event === 'unlinkDir')) {
+        await runScanIfDue(pair.input, pair.output, newFilesDays);
         await regenerate(pair.output, pair.name);
       }
     } catch (err) {
@@ -71,6 +73,7 @@ function startWatcher(pair, ignoreFolders) {
       });
       await waitForQueue();
       initialScanDone = true;
+      await runScanIfDue(pair.input, pair.output, newFilesDays);
       await regenerate(pair.output, pair.name);
       console.log(`[watcher:${pair.name}] Initial sync complete, watching for changes`);
     });

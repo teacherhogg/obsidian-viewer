@@ -8,7 +8,7 @@ const { startWatcher } = require('./watcher');
 const { regenerate } = require('./indexer');
 
 async function main() {
-  const { pairs, ignoreFolders } = loadConfig();
+  const { pairs, ignoreFolders, newFilesDays } = loadConfig();
   console.log(`[obsidian-viewer] Starting with ${pairs.length} vault pair(s)`);
   console.log(`[obsidian-viewer] Ignoring folders: ${ignoreFolders.join(', ')}`);
 
@@ -26,7 +26,7 @@ async function main() {
   // Start watchers; ignoreInitial:false causes them to emit 'add' for every
   // existing file, triggering the initial full sync.
   for (const pair of pairs) {
-    startWatcher(pair, ignoreFolders);
+    startWatcher(pair, ignoreFolders, newFilesDays);
   }
 }
 

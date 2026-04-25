@@ -28,7 +28,9 @@ function loadConfig() {
     .map(s => s.trim())
     .filter(Boolean);
 
-  return { pairs, ignoreFolders };
+  const newFilesDays = parseInt(process.env.NEW_FILES_DAYS || '30', 10);
+
+  return { pairs, ignoreFolders, newFilesDays };
 }
 
 module.exports = { loadConfig };

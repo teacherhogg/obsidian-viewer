@@ -172,6 +172,21 @@
     .tree-children { display: none; }
     .tree-children.open { display: block; }
 
+    .new-badge { color: var(--accent); font-size: 0.75em; flex-shrink: 0; margin-left: 2px; }
+
+    /* ── Sidebar resize handle ── */
+    #sidebar-resize-handle {
+      width: 5px;
+      cursor: col-resize;
+      flex-shrink: 0;
+      background: transparent;
+      transition: background 0.15s;
+    }
+    #sidebar-resize-handle:hover { background: var(--border); }
+    #sidebar-resize-handle.resizing { background: var(--accent); }
+    body.sidebar-collapsed #sidebar-resize-handle { display: none; }
+    @media (max-width: 768px) { #sidebar-resize-handle { display: none; } }
+
     /* ── Desktop sidebar collapse ── */
     #sidebar-reopen-btn {
       display: none;
@@ -282,6 +297,8 @@
     <div id="sidebar-tree">Loading…</div>
   </nav>
 
+  <div id="sidebar-resize-handle"></div>
+
   <div id="main">
     <h1>{{VAULT_NAME}}</h1>
     <p>Select a note from the sidebar to begin reading.</p>
@@ -328,6 +345,39 @@
       document.body.classList.add('sidebar-collapsed');
     }
 
+    // ── Resizable sidebar ──
+    const MIN_SIDEBAR_WIDTH = 160, MAX_SIDEBAR_WIDTH = 800;
+    const sidebarEl = document.getElementById('sidebar');
+    const resizeHandle = document.getElementById('sidebar-resize-handle');
+
+    if (!isMobile()) {
+      const savedW = parseInt(localStorage.getItem('sidebarWidth') || '280', 10);
+      document.documentElement.style.setProperty('--sidebar-width', savedW + 'px');
+    }
+
+    resizeHandle.addEventListener('mousedown', e => {
+      if (isMobile() || document.body.classList.contains('sidebar-collapsed')) return;
+      e.preventDefault();
+      sidebarEl.style.transition = 'none';
+      resizeHandle.classList.add('resizing');
+      const startX = e.clientX;
+      const startW = sidebarEl.getBoundingClientRect().width;
+
+      const onMove = e => {
+        const w = Math.max(MIN_SIDEBAR_WIDTH, Math.min(MAX_SIDEBAR_WIDTH, startW + (e.clientX - startX)));
+        document.documentElement.style.setProperty('--sidebar-width', w + 'px');
+      };
+      const onUp = () => {
+        localStorage.setItem('sidebarWidth', Math.round(sidebarEl.getBoundingClientRect().width));
+        sidebarEl.style.transition = '';
+        resizeHandle.classList.remove('resizing');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+
     // ── Expand / Collapse all ──
     document.getElementById('expand-all-btn').addEventListener('click', () => {
       document.querySelectorAll('.tree-children').forEach(el => el.classList.add('open'));
@@ -357,7 +407,8 @@
       if (node.type === 'dir' && depth > 0) {
         const item = document.createElement('div');
         item.className = 'tree-item dir-item';
-        item.innerHTML = `<span class="tree-toggle">▶</span><span class="tree-icon">📁</span><span class="tree-label">${esc(node.name)}</span>`;
+        const dirBadge = node.isNew ? '<span class="new-badge" title="Contains new content">★</span>' : '';
+        item.innerHTML = `<span class="tree-toggle">▶</span><span class="tree-icon">📁</span><span class="tree-label">${esc(node.name)}</span>${dirBadge}`;
 
         const children = document.createElement('div');
         children.className = 'tree-children';
@@ -383,7 +434,8 @@
         a.href = ROOT_PREFIX + node.path;
         a.className = 'tree-item file-item';
         const label = node.name.replace(/\.html$/, '');
-        a.innerHTML = `<span class="tree-icon">📄</span><span class="tree-label">${esc(label)}</span>`;
+        const fileBadge = node.isNew ? '<span class="new-badge" title="New content">★</span>' : '';
+        a.innerHTML = `<span class="tree-icon">📄</span><span class="tree-label">${esc(label)}</span>${fileBadge}`;
         div.appendChild(a);
 
       } else if (depth === 0) {
