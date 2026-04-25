@@ -10,9 +10,12 @@ services:
       # ── Pair 1 ──────────────────────────────────────────────────────────────
       - ${PAIR_1_INPUT}:/inputs/1:ro
       - ${PAIR_1_OUTPUT}:/outputs/1
-      # ── Pair 2 (uncomment and duplicate for additional vaults) ─────────────
+      # ── Pair 2 ──────────────────────────────────────────────────────────────
       - ${PAIR_2_INPUT}:/inputs/2:ro
       - ${PAIR_2_OUTPUT}:/outputs/2
+      # ── Pair 3 ──────────────────────────────────────────────────────────────
+      - ${PAIR_3_INPUT}:/inputs/3:ro
+      - ${PAIR_3_OUTPUT}:/outputs/3
 
   nginx:
     build:
@@ -25,10 +28,14 @@ services:
       - ${PAIR_1_OUTPUT}:/sites/1:ro
       # ── Pair 2 ────────────────────────────────────────────────────────────
       - ${PAIR_2_OUTPUT}:/sites/2:ro
+      # ── Pair 3 ────────────────────────────────────────────────────────────
+      - ${PAIR_3_OUTPUT}:/sites/3:ro
     ports:
       # ── Pair 1 ──────────────────────────────────────────────────────────────
       - "${PAIR_1_PORT}:${PAIR_1_PORT}"
       # ── Pair 2 ────────────────────────────────────────────────────────────
       - "${PAIR_2_PORT}:${PAIR_2_PORT}"
+      # ── Pair 3 ────────────────────────────────────────────────────────────
+      - "${PAIR_3_PORT}:${PAIR_3_PORT}"
     depends_on:
       - watcher

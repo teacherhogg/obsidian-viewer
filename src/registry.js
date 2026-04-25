@@ -25,4 +25,27 @@ function clear() {
   registry.clear();
 }
 
-module.exports = { register, unregister, resolve, clear };
+// Maps image filename (basename with extension) → { outputAbsPath, vaultIndex }
+// Used by preprocessor to resolve ![[image.png]] to the correct relative path.
+const imageRegistry = new Map();
+
+function registerImage(fileName, outputAbsPath, vaultIndex) {
+  const key = fileName.toLowerCase();
+  if (!imageRegistry.has(key)) {
+    imageRegistry.set(key, { outputAbsPath, vaultIndex });
+  }
+}
+
+function unregisterImage(fileName) {
+  imageRegistry.delete(fileName.toLowerCase());
+}
+
+function resolveImage(fileName) {
+  return imageRegistry.get(fileName.toLowerCase()) || null;
+}
+
+function clearImages() {
+  imageRegistry.clear();
+}
+
+module.exports = { register, unregister, resolve, clear, registerImage, unregisterImage, resolveImage, clearImages };

@@ -25,9 +25,17 @@ function preprocess(mdContent, sourceAbsPath, outputAbsPath) {
     if (isEmbed) {
       if (IMAGE_EXTS.has(ext) || ext === '') {
         // ![[image.png]] or ![[image]] → img tag
-        // Images are copied as-is; use relative path from current output file
-        const imgName = ext ? noteName : noteName;
-        return `![${alias || imgName}](./${imgName})`;
+        const imgName = noteName;
+        let imgSrc;
+        if (IMAGE_EXTS.has(ext)) {
+          const resolved = registry.resolveImage(path.basename(imgName));
+          if (resolved) {
+            const rel = path.relative(path.dirname(outputAbsPath), resolved.outputAbsPath);
+            imgSrc = rel.startsWith('.') ? rel : './' + rel;
+          }
+        }
+        if (!imgSrc) imgSrc = `./${imgName}`;
+        return `![${alias || imgName}](${imgSrc})`;
       }
       // ![[OtherNote]] → phase 2; emit a styled placeholder link
       const displayName = alias || noteName;

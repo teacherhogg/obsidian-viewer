@@ -6,6 +6,8 @@ const registry = require('./registry');
 const { convertFile } = require('./converter');
 const { regenerate } = require('./indexer');
 
+const IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.bmp', '.ico']);
+
 async function handleAdd(inputAbsPath, pair) {
   const outputAbsPath = toOutputPath(inputAbsPath, pair);
   await fs.ensureDir(path.dirname(outputAbsPath));
@@ -15,6 +17,10 @@ async function handleAdd(inputAbsPath, pair) {
     registry.register(noteName, outputAbsPath.replace(/\.md$/, '.html'), pair.index);
     await convertFile(inputAbsPath, outputAbsPath.replace(/\.md$/, '.html'), pair.output);
   } else {
+    const ext = path.extname(inputAbsPath).toLowerCase();
+    if (IMAGE_EXTS.has(ext)) {
+      registry.registerImage(path.basename(inputAbsPath), outputAbsPath, pair.index);
+    }
     await fs.copy(inputAbsPath, outputAbsPath, { overwrite: true });
   }
 }

@@ -7,6 +7,8 @@ const registry = require('./registry');
 const { startWatcher } = require('./watcher');
 const { regenerate } = require('./indexer');
 
+const IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.bmp', '.ico']);
+
 async function main() {
   const { pairs, ignoreFolders, newFilesDays } = loadConfig();
   console.log(`[obsidian-viewer] Starting with ${pairs.length} vault pair(s)`);
@@ -46,6 +48,9 @@ async function scanForNotes(inputDir, outputDir, vaultIndex, ignoreFolders) {
       const noteName = path.basename(entry.name, '.md');
       const outputAbsPath = path.join(outputDir, entry.name.replace(/\.md$/, '.html'));
       registry.register(noteName, outputAbsPath, vaultIndex);
+    } else if (entry.isFile() && IMAGE_EXTS.has(path.extname(entry.name).toLowerCase())) {
+      const outputAbsPath = path.join(outputDir, entry.name);
+      registry.registerImage(entry.name, outputAbsPath, vaultIndex);
     }
   }
 }
