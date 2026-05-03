@@ -361,6 +361,33 @@
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--bg-active); border-radius: 3px; }
+
+    /* ── Read status bar ── */
+    #read-status-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 0 12px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    #mark-read-btn {
+      background: var(--bg-active);
+      border: 1px solid var(--border);
+      color: var(--text);
+      cursor: pointer;
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+    #mark-read-btn:hover { background: var(--bg-hover); }
+    #mark-read-btn.read { color: var(--accent2); border-color: var(--accent2); }
+    #auth-status-link { color: var(--text-muted); font-size: 0.78rem; text-decoration: none; margin-left: auto; white-space: nowrap; }
+    #auth-status-link:hover { color: var(--accent); }
+    .read-dot { color: var(--accent2); font-size: 0.72em; margin-left: 3px; flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -388,12 +415,18 @@
 
   <div id="content-wrap">
     <article id="content">
+      <div id="read-status-bar">
+        <button id="mark-read-btn" style="display:none">Mark as read</button>
+        <span id="read-info"></span>
+        <a id="auth-status-link" href="/login.html" style="display:none"></a>
+      </div>
       {{BODY}}
     </article>
   </div>
 
   <script>
     const ROOT_PREFIX = '{{ROOT_PREFIX}}';
+    const VAULT_NAME = {{VAULT_NAME_JSON}};
     const CURRENT_PATH = location.pathname;
 
     // ── Theme ──
@@ -565,10 +598,120 @@
     }
 
     let navData = null;
+    let currentUser = null;
+    let vaultReads = null;
+
+    // ── Auth ──
+    async function checkAuthStatus() {
+      try {
+        const res = await fetch('/auth/status');
+        if (!res.ok) return;
+        const data = await res.json();
+        currentUser = data.loggedIn ? data.username : null;
+      } catch { currentUser = null; }
+      const link = document.getElementById('auth-status-link');
+      if (!currentUser) {
+        link.textContent = 'Log in to track reading';
+        link.href = '/login.html?return=' + encodeURIComponent(location.pathname);
+        link.style.display = '';
+      } else {
+        link.textContent = currentUser + ' · Log out';
+        link.href = '#';
+        link.style.display = '';
+        link.onclick = async (e) => {
+          e.preventDefault();
+          await fetch('/auth/logout', { method: 'POST' });
+          currentUser = null;
+          vaultReads = null;
+          link.textContent = 'Log in to track reading';
+          link.href = '/login.html?return=' + encodeURIComponent(location.pathname);
+          link.onclick = null;
+          document.getElementById('mark-read-btn').style.display = 'none';
+          document.getElementById('read-info').textContent = '';
+        };
+      }
+    }
+
+    // ── Vault-wide reads (for nav dots) ──
+    async function loadVaultReads() {
+      if (!currentUser) return;
+      try {
+        const res = await fetch('/api/reads/vault?vault=' + encodeURIComponent(VAULT_NAME));
+        if (!res.ok) return;
+        const data = await res.json();
+        vaultReads = {};
+        for (const r of data.reads) vaultReads[r.docPath.replace(/\\/g, '/')] = r;
+      } catch { vaultReads = null; }
+    }
+
+    function applyReadDotsToNav() {
+      if (!vaultReads) return;
+      document.querySelectorAll('.file-item').forEach(el => {
+        const href = el.getAttribute('href') || '';
+        const docPath = href.startsWith(ROOT_PREFIX)
+          ? href.slice(ROOT_PREFIX.length)
+          : href.replace(/^\//, '');
+        if (vaultReads[docPath] && !el.querySelector('.read-dot')) {
+          el.insertAdjacentHTML('beforeend', '<span class="read-dot" title="Read">✓</span>');
+        }
+      });
+    }
+
+    // ── Per-doc read status ──
+    async function loadDocReadStatus() {
+      if (!currentUser) return;
+      const docPath = CURRENT_PATH.replace(/^\//, '');
+      try {
+        const res = await fetch('/api/reads/doc?vault=' + encodeURIComponent(VAULT_NAME) + '&path=' + encodeURIComponent(docPath));
+        if (!res.ok) return;
+        const data = await res.json();
+        const btn = document.getElementById('mark-read-btn');
+        const info = document.getElementById('read-info');
+        btn.style.display = '';
+        if (data.read) {
+          btn.textContent = 'Read again';
+          btn.classList.add('read');
+          info.textContent = 'Read ' + data.readCount + '× · Last: ' + new Date(data.lastRead * 1000).toLocaleDateString();
+        } else {
+          btn.textContent = 'Mark as read';
+          btn.classList.remove('read');
+          info.textContent = '';
+        }
+      } catch {}
+    }
+
+    async function markAsRead() {
+      if (!currentUser) { location.href = '/login.html?return=' + encodeURIComponent(location.pathname); return; }
+      const docPath = CURRENT_PATH.replace(/^\//, '');
+      try {
+        const res = await fetch('/api/reads/mark', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vaultName: VAULT_NAME, docPath }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const btn = document.getElementById('mark-read-btn');
+        const info = document.getElementById('read-info');
+        btn.textContent = 'Read again';
+        btn.classList.add('read');
+        info.textContent = 'Read ' + data.readCount + '× · Last: ' + new Date(data.lastRead * 1000).toLocaleDateString();
+        if (vaultReads) {
+          vaultReads[docPath] = { readCount: data.readCount, lastRead: data.lastRead };
+          applyReadDotsToNav();
+        }
+      } catch {}
+    }
+
+    document.getElementById('mark-read-btn').addEventListener('click', markAsRead);
 
     async function init() {
+      await checkAuthStatus();
+      await loadVaultReads();
       navData = await loadNav();
       renderTree(navData, '');
+      applyReadDotsToNav();
+      await loadDocReadStatus();
     }
 
     function renderTree(data, query) {

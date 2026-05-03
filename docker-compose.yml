@@ -17,6 +17,15 @@ services:
       - ${PAIR_3_INPUT}:/inputs/3:ro
       - ${PAIR_3_OUTPUT}:/outputs/3
 
+  miraview-server:
+    build:
+      context: ./miraview-server
+      dockerfile: Dockerfile
+    env_file: .env
+    restart: always
+    volumes:
+      - miraview-data:/data
+
   nginx:
     build:
       context: ./nginx
@@ -39,3 +48,7 @@ services:
       - "${PAIR_3_PORT}:${PAIR_3_PORT}"
     depends_on:
       - watcher
+      - miraview-server
+
+volumes:
+  miraview-data:

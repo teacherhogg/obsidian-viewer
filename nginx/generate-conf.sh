@@ -23,6 +23,19 @@ server {
     index index.html;
     charset utf-8;
 
+    location /auth/ {
+        proxy_pass         http://miraview-server:3001;
+        proxy_set_header   Host \$host;
+        proxy_set_header   X-Real-IP \$remote_addr;
+        proxy_cookie_path  / /;
+    }
+
+    location /api/ {
+        proxy_pass         http://miraview-server:3001;
+        proxy_set_header   Host \$host;
+        proxy_set_header   X-Real-IP \$remote_addr;
+    }
+
     location / {
         try_files \$uri \$uri.html \$uri/ =404;
     }

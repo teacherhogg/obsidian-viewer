@@ -41,11 +41,13 @@ async function convertFile(inputAbsPath, outputAbsPath, vaultOutputRoot) {
   const depth = path.relative(vaultOutputRoot, path.dirname(outputAbsPath)).split(path.sep).filter(Boolean).length;
   const rootPrefix = depth === 0 ? './' : '../'.repeat(depth);
 
+  const vaultName = path.basename(vaultOutputRoot);
   const html = getTemplate()
     .replace(/{{TITLE}}/g, escapeHtml(title))
     .replace(/{{BODY}}/g, bodyHtml)
     .replace(/{{ROOT_PREFIX}}/g, rootPrefix)
-    .replace(/{{VAULT_NAME}}/g, path.basename(vaultOutputRoot));
+    .replace(/{{VAULT_NAME}}/g, vaultName)
+    .replace(/{{VAULT_NAME_JSON}}/g, JSON.stringify(vaultName));
 
   await fs.ensureDir(path.dirname(outputAbsPath));
   await fs.writeFile(outputAbsPath, html, 'utf8');

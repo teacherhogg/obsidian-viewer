@@ -12,7 +12,7 @@ function getTemplate() {
   return indexTemplate;
 }
 
-const SKIP = new Set(['_nav.json', 'index.html', '_new_files.json']);
+const SKIP = new Set(['_nav.json', 'index.html', '_new_files.json', 'login.html']);
 const MD_HIDDEN = /^\./; // skip dot files/dirs
 
 async function buildTree(dir, rootDir, newFilesSet) {
@@ -57,10 +57,14 @@ async function regenerate(vaultOutputRoot, vaultName) {
 
   const html = getTemplate()
     .replace(/{{VAULT_NAME}}/g, escapeHtml(vaultName))
+    .replace(/{{VAULT_NAME_JSON}}/g, JSON.stringify(vaultName))
     .replace(/{{ROOT_PREFIX}}/g, './')
     .replace(/{{TITLE}}/g, escapeHtml(vaultName));
 
   await fs.writeFile(path.join(vaultOutputRoot, 'index.html'), html, 'utf8');
+
+  const loginSrc = path.join(__dirname, '../templates/login.html');
+  await fs.copy(loginSrc, path.join(vaultOutputRoot, 'login.html'));
 }
 
 function escapeHtml(str) {

@@ -17,6 +17,7 @@
       --text-muted: #7f849c;
       --text-heading: #cba6f7;
       --accent: #89b4fa;
+      --accent2: #a6e3a1;
       --border: #313244;
       --tag-bg: #313244;
       --tag-text: #89dceb;
@@ -31,6 +32,7 @@
       --text-muted: #8c8fa1;
       --text-heading: #8839ef;
       --accent: #1e66f5;
+      --accent2: #40a02b;
       --border: #ccd0da;
       --tag-bg: #ccd0da;
       --tag-text: #179299;
@@ -173,6 +175,34 @@
     .tree-children.open { display: block; }
 
     .new-badge { color: var(--accent); font-size: 0.75em; flex-shrink: 0; margin-left: 2px; }
+    .read-dot { color: var(--accent2); font-size: 0.72em; margin-left: 3px; flex-shrink: 0; }
+
+    /* ── Filter bar ── */
+    #nav-filter-bar {
+      padding: 5px 10px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    #nav-filter-bar select {
+      width: 100%;
+      background: var(--bg-active);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text);
+      font-size: 0.75rem;
+      padding: 3px 6px;
+      cursor: pointer;
+      outline: none;
+    }
+    #nav-filter-bar select:focus { border-color: var(--accent); }
+
+    /* ── Auth bar ── */
+    #auth-bar {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+    #auth-bar a { color: var(--accent); text-decoration: none; }
+    #auth-bar a:hover { text-decoration: underline; }
 
     /* ── Sidebar resize handle ── */
     #sidebar-resize-handle {
@@ -294,6 +324,17 @@
       <button id="expand-all-btn" title="Expand all folders">Expand all</button>
       <button id="collapse-all-btn" title="Collapse all folders">Collapse all</button>
     </div>
+    <div id="nav-filter-bar" style="display:none">
+      <select id="nav-filter-select">
+        <option value="all">All notes</option>
+        <option value="read">Read</option>
+        <option value="unread">Unread</option>
+        <option value="most-read">Sort: Most read</option>
+        <option value="least-read">Sort: Least read</option>
+        <option value="recently-read">Sort: Recently read</option>
+        <option value="least-recently-read">Sort: Least recently read</option>
+      </select>
+    </div>
     <div id="sidebar-tree">Loading…</div>
   </nav>
 
@@ -302,10 +343,12 @@
   <div id="main">
     <h1>{{VAULT_NAME}}</h1>
     <p>Select a note from the sidebar to begin reading.</p>
+    <p id="auth-bar"></p>
   </div>
 
   <script>
     const ROOT_PREFIX = '{{ROOT_PREFIX}}';
+    const VAULT_NAME = {{VAULT_NAME_JSON}};
 
     // ── Theme ──
     const themeBtn = document.getElementById('theme-toggle-btn');
@@ -457,20 +500,124 @@
     }
 
     let navData = null;
+    let currentUser = null;
+    let vaultReads = null;
+
+    // ── Auth ──
+    async function checkAuthStatus() {
+      try {
+        const res = await fetch('/auth/status');
+        if (!res.ok) return;
+        const data = await res.json();
+        currentUser = data.loggedIn ? data.username : null;
+      } catch { currentUser = null; }
+      const authBar = document.getElementById('auth-bar');
+      if (!currentUser) {
+        authBar.innerHTML = '<a href="/login.html">Sign in</a> to track reading';
+      } else {
+        authBar.innerHTML = 'Signed in as <strong>' + esc(currentUser) + '</strong> · <a href="#" id="logout-link">Log out</a>';
+        document.getElementById('logout-link').addEventListener('click', async (e) => {
+          e.preventDefault();
+          await fetch('/auth/logout', { method: 'POST' });
+          currentUser = null;
+          vaultReads = null;
+          authBar.innerHTML = '<a href="/login.html">Sign in</a> to track reading';
+          document.getElementById('nav-filter-bar').style.display = 'none';
+          renderTree(navData, document.getElementById('search-input').value.trim());
+        });
+        document.getElementById('nav-filter-bar').style.display = '';
+      }
+    }
+
+    // ── Vault-wide reads ──
+    async function loadVaultReads() {
+      if (!currentUser) return;
+      try {
+        const res = await fetch('/api/reads/vault?vault=' + encodeURIComponent(VAULT_NAME));
+        if (!res.ok) return;
+        const data = await res.json();
+        vaultReads = {};
+        for (const r of data.reads) vaultReads[r.docPath.replace(/\\/g, '/')] = r;
+      } catch { vaultReads = null; }
+    }
+
+    function applyReadDotsToNav() {
+      if (!vaultReads) return;
+      document.querySelectorAll('.file-item').forEach(el => {
+        const href = el.getAttribute('href') || '';
+        const docPath = href.startsWith(ROOT_PREFIX)
+          ? href.slice(ROOT_PREFIX.length)
+          : href.replace(/^\//, '');
+        if (vaultReads[docPath] && !el.querySelector('.read-dot')) {
+          el.insertAdjacentHTML('beforeend', '<span class="read-dot" title="Read">✓</span>');
+        }
+      });
+    }
+
+    // ── Filter / Sort ──
+    function getFilteredNav(data, mode) {
+      if (!vaultReads || mode === 'all' || !data) return data;
+
+      if (mode === 'read' || mode === 'unread') {
+        const wantRead = mode === 'read';
+        function filterReadState(node) {
+          if (node.type === 'file') {
+            const isRead = !!vaultReads[node.path.replace(/\\/g, '/')];
+            return isRead === wantRead ? node : null;
+          }
+          const kids = (node.children || []).map(filterReadState).filter(Boolean);
+          return kids.length ? { ...node, children: kids } : null;
+        }
+        return filterReadState(data);
+      }
+
+      // Sort modes: flatten all files, sort, return synthetic flat root
+      const flat = [];
+      function collectFiles(node) {
+        if (node.type === 'file') {
+          const r = vaultReads[node.path.replace(/\\/g, '/')];
+          flat.push({ node, readCount: r ? r.readCount : 0, lastRead: r ? r.lastRead : 0 });
+        }
+        for (const c of (node.children || [])) collectFiles(c);
+      }
+      collectFiles(data);
+
+      const sortFns = {
+        'most-read':           (a, b) => b.readCount - a.readCount,
+        'least-read':          (a, b) => a.readCount - b.readCount,
+        'recently-read':       (a, b) => b.lastRead - a.lastRead,
+        'least-recently-read': (a, b) => a.lastRead - b.lastRead,
+      };
+      flat.sort(sortFns[mode] || (() => 0));
+      return { ...data, children: flat.map(f => f.node) };
+    }
 
     function renderTree(data, query) {
+      const mode = (document.getElementById('nav-filter-select') || {}).value || 'all';
       const container = document.getElementById('sidebar-tree');
       if (!data) { container.textContent = 'Navigation unavailable'; return; }
-      const filtered = query ? filterTree(data, query.toLowerCase()) : data;
+      let processed = query ? filterTree(data, query.toLowerCase()) : data;
+      if (!query && mode !== 'all') processed = getFilteredNav(processed, mode);
       container.innerHTML = '';
-      if (filtered) container.appendChild(buildTree(filtered, 0, !!query));
+      if (processed) container.appendChild(buildTree(processed, 0, !!query || mode !== 'all'));
+      if (!query) applyReadDotsToNav();
     }
 
     document.getElementById('search-input').addEventListener('input', e => {
       renderTree(navData, e.target.value.trim());
     });
 
-    loadNav().then(data => { navData = data; renderTree(navData, ''); });
+    async function init() {
+      await checkAuthStatus();
+      await loadVaultReads();
+      navData = await loadNav();
+      renderTree(navData, '');
+    }
+
+    const filterSelect = document.getElementById('nav-filter-select');
+    filterSelect.addEventListener('change', () => renderTree(navData, document.getElementById('search-input').value.trim()));
+
+    init();
   </script>
 </body>
 </html>
