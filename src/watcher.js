@@ -4,6 +4,7 @@ const chokidar = require('chokidar');
 const { regenerate } = require('./indexer');
 const { handleAdd, handleChange, handleUnlink, handleAddDir, handleUnlinkDir } = require('./sync');
 const { runScanIfDue } = require('./newfiles');
+const { generateShowcase } = require('./showcase');
 
 function buildIgnored(ignoreFolders) {
   // Match any path segment that exactly equals a folder in the ignore list.
@@ -45,6 +46,7 @@ function startWatcher(pair, ignoreFolders, newFilesDays) {
       if (initialScanDone && (event === 'add' || event === 'change' || event === 'unlink' || event === 'unlinkDir')) {
         await runScanIfDue(pair.input, pair.output, newFilesDays);
         await regenerate(pair.output, pair.name);
+        await generateShowcase(pair, pair.name);
       }
     } catch (err) {
       console.error(`[watcher:${pair.name}] Error on ${event} ${filePath}:`, err.message);
@@ -75,6 +77,7 @@ function startWatcher(pair, ignoreFolders, newFilesDays) {
       initialScanDone = true;
       await runScanIfDue(pair.input, pair.output, newFilesDays);
       await regenerate(pair.output, pair.name);
+      await generateShowcase(pair, pair.name);
       console.log(`[watcher:${pair.name}] Initial sync complete, watching for changes`);
     });
 

@@ -24,7 +24,7 @@ marked.setOptions({
   breaks: false,
 });
 
-async function convertFile(inputAbsPath, outputAbsPath, vaultOutputRoot) {
+async function convertFile(inputAbsPath, outputAbsPath, vaultOutputRoot, vaultName) {
   const mdContent = await fs.readFile(inputAbsPath, 'utf8');
   const { content, meta } = preprocess(mdContent, inputAbsPath, outputAbsPath);
 
@@ -41,13 +41,13 @@ async function convertFile(inputAbsPath, outputAbsPath, vaultOutputRoot) {
   const depth = path.relative(vaultOutputRoot, path.dirname(outputAbsPath)).split(path.sep).filter(Boolean).length;
   const rootPrefix = depth === 0 ? './' : '../'.repeat(depth);
 
-  const vaultName = path.basename(vaultOutputRoot);
+  const resolvedVaultName = vaultName || path.basename(vaultOutputRoot);
   const html = getTemplate()
     .replace(/{{TITLE}}/g, escapeHtml(title))
     .replace(/{{BODY}}/g, bodyHtml)
     .replace(/{{ROOT_PREFIX}}/g, rootPrefix)
-    .replace(/{{VAULT_NAME}}/g, vaultName)
-    .replace(/{{VAULT_NAME_JSON}}/g, JSON.stringify(vaultName));
+    .replace(/{{VAULT_NAME}}/g, resolvedVaultName)
+    .replace(/{{VAULT_NAME_JSON}}/g, JSON.stringify(resolvedVaultName));
 
   await fs.ensureDir(path.dirname(outputAbsPath));
   await fs.writeFile(outputAbsPath, html, 'utf8');
