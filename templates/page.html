@@ -401,6 +401,222 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--bg-active); border-radius: 3px; }
 
+    /* ── Quiz Modal ── */
+    #quiz-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.75);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #quiz-modal.open { display: flex; }
+    #quiz-modal-inner {
+      background: var(--bg-sidebar);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 680px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 28px 32px;
+      position: relative;
+    }
+    #quiz-close-btn {
+      position: absolute;
+      top: 14px; right: 18px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.4rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+    #quiz-close-btn:hover { color: var(--text); }
+
+    /* Loading */
+    .quiz-loading { text-align: center; padding: 40px 0; color: var(--text-muted); }
+    @keyframes quiz-spin { to { transform: rotate(360deg); } }
+    .quiz-spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: quiz-spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    /* Error */
+    .quiz-error { text-align: center; padding: 32px 0; color: #f38ba8; }
+
+    /* Select screen */
+    .quiz-select h2 { color: var(--text-heading); margin-bottom: 16px; font-size: 1.1rem; }
+    .quiz-version-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg-active);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+    }
+    .quiz-version-info { flex: 1; display: flex; flex-direction: column; gap: 3px; font-size: 0.82rem; }
+    .quiz-version-date { color: var(--text); font-weight: 600; }
+    .quiz-version-count { color: var(--text-muted); }
+    .quiz-version-last { color: var(--accent2); }
+    .quiz-start-btn {
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      border-radius: 6px;
+      padding: 7px 16px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      white-space: nowrap;
+      font-weight: 600;
+    }
+    .quiz-start-btn:hover { opacity: 0.85; }
+    .quiz-gen-btn {
+      width: 100%;
+      margin-top: 8px;
+      background: none;
+      border: 1px dashed var(--border);
+      color: var(--text-muted);
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .quiz-gen-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--bg-hover); }
+
+    /* Question & feedback screens */
+    .quiz-progress-line { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px; }
+    .quiz-question-text {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: var(--text);
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+    .quiz-answers { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+    .quiz-answer-btn {
+      text-align: left;
+      background: var(--bg-active);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 7px;
+      padding: 10px 14px;
+      font-size: 0.88rem;
+      cursor: pointer;
+      line-height: 1.4;
+    }
+    .quiz-answer-btn:hover { background: var(--bg-hover); border-color: var(--accent); }
+    .quiz-answer-btn.selected { border-color: var(--accent); background: var(--bg-hover); color: var(--accent); }
+    .quiz-answer-check {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: var(--bg-active);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 10px 14px;
+      font-size: 0.88rem;
+      cursor: pointer;
+      line-height: 1.4;
+    }
+    .quiz-answer-check:hover { background: var(--bg-hover); border-color: var(--accent); }
+    .quiz-answer-check input { margin-top: 2px; accent-color: var(--accent); flex-shrink: 0; }
+    .quiz-ms-hint, .quiz-qa-hint { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 16px; font-style: italic; }
+    .quiz-nav { display: flex; justify-content: flex-end; margin-top: 8px; }
+    .quiz-next-btn {
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      border-radius: 7px;
+      padding: 9px 22px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .quiz-next-btn:hover:not(:disabled) { opacity: 0.85; }
+    .quiz-next-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Feedback */
+    .quiz-result-banner {
+      font-size: 1.1rem;
+      font-weight: 700;
+      border-radius: 8px;
+      padding: 10px 16px;
+      margin-bottom: 16px;
+    }
+    .quiz-result-banner.correct { background: rgba(166,227,161,0.15); color: var(--accent2); }
+    .quiz-result-banner.incorrect { background: rgba(243,139,168,0.15); color: #f38ba8; }
+    .quiz-correct-answer { font-size: 0.88rem; color: var(--text); margin-bottom: 12px; }
+    .quiz-correct-answer strong { color: var(--text-heading); }
+    .quiz-model-answer {
+      background: var(--bg-active);
+      border-left: 3px solid var(--accent2);
+      border-radius: 0 6px 6px 0;
+      padding: 12px 16px;
+      font-size: 0.88rem;
+      color: var(--text);
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+    .quiz-explanation {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+    .quiz-self-grade-prompt { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 10px; }
+    .quiz-self-grade { display: flex; gap: 10px; }
+    .quiz-grade-btn {
+      flex: 1;
+      border: none;
+      border-radius: 7px;
+      padding: 9px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .quiz-grade-correct { background: rgba(166,227,161,0.2); color: var(--accent2); border: 1px solid var(--accent2); }
+    .quiz-grade-correct:hover { background: rgba(166,227,161,0.35); }
+    .quiz-grade-wrong { background: rgba(243,139,168,0.2); color: #f38ba8; border: 1px solid #f38ba8; }
+    .quiz-grade-wrong:hover { background: rgba(243,139,168,0.35); }
+
+    /* Finish screen */
+    .quiz-finish-screen h2 { color: var(--text-heading); margin-bottom: 12px; font-size: 1.15rem; }
+    .quiz-score { font-size: 2.5rem; font-weight: 700; color: var(--accent); margin-bottom: 20px; }
+    .quiz-review { display: flex; flex-direction: column; gap: 6px; margin-bottom: 24px; }
+    .quiz-review-item {
+      font-size: 0.82rem;
+      padding: 6px 10px;
+      border-radius: 5px;
+      line-height: 1.4;
+    }
+    .quiz-review-item.correct { background: rgba(166,227,161,0.1); color: var(--accent2); }
+    .quiz-review-item.incorrect { background: rgba(243,139,168,0.1); color: #f38ba8; }
+
+    /* Status bar quiz elements */
+    #quiz-me-btn {
+      background: var(--bg-active);
+      border: 1px solid var(--border);
+      color: var(--text);
+      cursor: pointer;
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+    #quiz-me-btn:hover { background: var(--bg-hover); }
+    #quiz-info { font-size: 0.8rem; color: var(--text-muted); }
+    .quiz-divider { color: var(--border); margin: 0 4px; }
+
     /* ── Read status bar ── */
     #read-status-bar {
       display: flex;
@@ -459,11 +675,21 @@
     <img id="lightbox-img" src="" alt="">
   </div>
 
+  <div id="quiz-modal">
+    <div id="quiz-modal-inner">
+      <button id="quiz-close-btn" aria-label="Close quiz">✕</button>
+      <div id="quiz-screen"></div>
+    </div>
+  </div>
+
   <div id="content-wrap">
     <article id="content">
       <div id="read-status-bar">
         <button id="mark-read-btn" style="display:none">Mark as read</button>
         <span id="read-info"></span>
+        <span class="quiz-divider" id="quiz-divider" style="display:none">|</span>
+        <button id="quiz-me-btn" style="display:none">Quiz Me</button>
+        <span id="quiz-info"></span>
         <a id="auth-status-link" href="/login.html" style="display:none"></a>
       </div>
       {{BODY}}
@@ -822,6 +1048,7 @@
       applyReadDotsToNav();
       updateShowcaseCards();
       await loadDocReadStatus();
+      await loadQuizStatus();
     }
 
     function renderTree(data, query) {
@@ -862,7 +1089,299 @@
       if (e.target !== lightboxImg) closeLightbox();
     });
     document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { closeLightbox(); closeQuizModal(); }
+    });
+
+    // ── Quiz ──
+    let quizSession = null;
+
+    async function loadQuizStatus() {
+      if (!currentUser) return;
+      if (document.querySelector('[data-is-showcase]')) return;
+      const docPath = CURRENT_PATH.replace(/^\//, '');
+      try {
+        const res = await fetch('/api/quiz/status?vault=' + encodeURIComponent(VAULT_NAME) + '&path=' + encodeURIComponent(docPath));
+        if (!res.ok) return;
+        const data = await res.json();
+        document.getElementById('quiz-me-btn').style.display = '';
+        document.getElementById('quiz-divider').style.display = '';
+        if (data.lastRun) {
+          const days = calendarDaysAgo(data.lastRun);
+          const dAgo = days === 0 ? 'today' : `${days}d ago`;
+          document.getElementById('quiz-info').textContent =
+            'Quiz: ' + data.lastScore + '/' + data.lastTotal + ' · ' + dAgo;
+        }
+      } catch {}
+    }
+
+    function openQuizModal() {
+      document.getElementById('quiz-modal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+      showQuizLoading('Loading quizzes…');
+      const docPath = CURRENT_PATH.replace(/^\//, '');
+      fetch('/api/quiz/list?vault=' + encodeURIComponent(VAULT_NAME) + '&path=' + encodeURIComponent(docPath))
+        .then(r => r.json())
+        .then(data => {
+          if (data.quizzes && data.quizzes.length > 0) showQuizSelect(data.quizzes);
+          else startGeneratingQuiz();
+        })
+        .catch(() => showQuizError('Failed to load quizzes.'));
+    }
+
+    function closeQuizModal() {
+      const modal = document.getElementById('quiz-modal');
+      if (!modal.classList.contains('open')) return;
+      modal.classList.remove('open');
+      document.body.style.overflow = '';
+      quizSession = null;
+    }
+
+    function quizScreen() { return document.getElementById('quiz-screen'); }
+
+    function showQuizLoading(msg) {
+      quizScreen().innerHTML = `<div class="quiz-loading"><div class="quiz-spinner"></div><p>${esc(msg)}</p></div>`;
+    }
+
+    function showQuizError(msg) {
+      quizScreen().innerHTML =
+        `<div class="quiz-error"><p>${esc(msg)}</p>` +
+        `<div class="quiz-nav" style="justify-content:center;margin-top:16px">` +
+        `<button class="quiz-next-btn" onclick="closeQuizModal()">Close</button></div></div>`;
+    }
+
+    function startGeneratingQuiz() {
+      showQuizLoading('Generating quiz… this may take a moment.');
+      const docPath = CURRENT_PATH.replace(/^\//, '');
+      const articleText = document.getElementById('content').innerText;
+      fetch('/api/quiz/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vaultName: VAULT_NAME, docPath, articleText }),
+      })
+        .then(r => r.json())
+        .then(quiz => {
+          if (quiz.error) { showQuizError('Generation failed: ' + quiz.error); return; }
+          startQuiz(quiz);
+        })
+        .catch(() => showQuizError('Failed to generate quiz.'));
+    }
+
+    function showQuizSelect(quizzes) {
+      let html = '<div class="quiz-select"><h2>Select a Quiz</h2>';
+      for (const q of quizzes) {
+        const lastRunStr = q.lastRun
+          ? `Last score: ${q.lastRun.score}/${q.lastRun.total} · ${fmtDate(q.lastRun.runAt)}`
+          : 'Never run';
+        html += `<div class="quiz-version-card">
+          <div class="quiz-version-info">
+            <span class="quiz-version-date">${fmtDate(q.generatedAt)}</span>
+            <span class="quiz-version-count">${q.questionCount} questions</span>
+            <span class="quiz-version-last">${esc(lastRunStr)}</span>
+          </div>
+          <button class="quiz-start-btn" data-quiz-id="${esc(q.id)}">Start →</button>
+        </div>`;
+      }
+      html += '<button class="quiz-gen-btn" id="quiz-gen-new-btn">+ Generate New Quiz</button>';
+      html += '</div>';
+      quizScreen().innerHTML = html;
+      quizScreen().querySelectorAll('.quiz-start-btn').forEach(btn => {
+        btn.addEventListener('click', () => loadAndStartQuiz(btn.dataset.quizId));
+      });
+      document.getElementById('quiz-gen-new-btn').addEventListener('click', startGeneratingQuiz);
+    }
+
+    function loadAndStartQuiz(quizId) {
+      showQuizLoading('Loading…');
+      const docPath = CURRENT_PATH.replace(/^\//, '');
+      fetch('/api/quiz?vault=' + encodeURIComponent(VAULT_NAME) +
+            '&path=' + encodeURIComponent(docPath) +
+            '&id=' + encodeURIComponent(quizId))
+        .then(r => r.json())
+        .then(quiz => startQuiz(quiz))
+        .catch(() => showQuizError('Failed to load quiz.'));
+    }
+
+    function startQuiz(quiz) {
+      quizSession = { quiz, answers: [], currentIdx: 0, quizId: quiz.id };
+      renderQuestion();
+    }
+
+    function renderQuestion() {
+      const { quiz, currentIdx } = quizSession;
+      const q = quiz.questions[currentIdx];
+      const total = quiz.questions.length;
+      const isLast = currentIdx + 1 === total;
+      let answersHtml = '';
+
+      if (q.type === 'mc') {
+        answersHtml = '<div class="quiz-answers">' +
+          (q.answers || []).map(a =>
+            `<button class="quiz-answer-btn" data-answer-id="${a.id}">${esc(a.answer)}</button>`
+          ).join('') + '</div>';
+      } else if (q.type === 'ms') {
+        answersHtml = '<div class="quiz-answers quiz-answers-ms">' +
+          (q.answers || []).map(a =>
+            `<label class="quiz-answer-check"><input type="checkbox" data-answer-id="${a.id}"> ${esc(a.answer)}</label>`
+          ).join('') + '</div>' +
+          '<p class="quiz-ms-hint">Select all that apply.</p>';
+      } else {
+        answersHtml = '<p class="quiz-qa-hint">Think of your answer, then proceed.</p>';
+      }
+
+      quizScreen().innerHTML = `
+        <div class="quiz-question-screen">
+          <div class="quiz-progress-line">Question ${currentIdx + 1}  /  ${total}</div>
+          <div class="quiz-question-text">${esc(q.question)}</div>
+          ${answersHtml}
+          <div class="quiz-nav">
+            <button id="quiz-next-btn" class="quiz-next-btn"${q.type === 'mc' ? ' disabled' : ''}>
+              ${isLast ? 'See Results' : 'Next →'}
+            </button>
+          </div>
+        </div>`;
+
+      if (q.type === 'mc') {
+        quizScreen().querySelectorAll('.quiz-answer-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            quizScreen().querySelectorAll('.quiz-answer-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            document.getElementById('quiz-next-btn').disabled = false;
+          });
+        });
+      }
+
+      document.getElementById('quiz-next-btn').addEventListener('click', () => {
+        let selectedId = null, selectedIds = null;
+        if (q.type === 'mc') {
+          const sel = quizScreen().querySelector('.quiz-answer-btn.selected');
+          if (!sel) return;
+          selectedId = parseInt(sel.dataset.answerId);
+        } else if (q.type === 'ms') {
+          selectedIds = Array.from(quizScreen().querySelectorAll('.quiz-answer-check input:checked'))
+            .map(cb => parseInt(cb.dataset.answerId));
+        }
+        quizSession.pendingAnswer = { selectedId, selectedIds };
+        renderFeedback();
+      });
+    }
+
+    function scoreQuestion(q, { selectedId, selectedIds }) {
+      if (q.type === 'mc') return selectedId === q.correctId;
+      if (q.type === 'ms') {
+        const correct = new Set(q.correctIds);
+        const selected = new Set(selectedIds);
+        return correct.size === selected.size && [...correct].every(id => selected.has(id));
+      }
+      return false;
+    }
+
+    function renderFeedback() {
+      const { quiz, currentIdx, pendingAnswer } = quizSession;
+      const q = quiz.questions[currentIdx];
+      const total = quiz.questions.length;
+      const isLast = currentIdx + 1 === total;
+
+      if (q.type === 'qa') {
+        quizScreen().innerHTML = `
+          <div class="quiz-feedback-screen">
+            <div class="quiz-progress-line">Question ${currentIdx + 1}  /  ${total}</div>
+            <div class="quiz-question-text">${esc(q.question)}</div>
+            <div class="quiz-model-answer"><strong>Model answer:</strong><br>${esc(q.answer)}</div>
+            ${q.explanation ? `<div class="quiz-explanation">${esc(q.explanation)}</div>` : ''}
+            <p class="quiz-self-grade-prompt">Did you get it right?</p>
+            <div class="quiz-self-grade">
+              <button class="quiz-grade-btn quiz-grade-correct" data-grade="1">I got it ✓</button>
+              <button class="quiz-grade-btn quiz-grade-wrong" data-grade="0">I didn’t get it ✗</button>
+            </div>
+          </div>`;
+        quizScreen().querySelectorAll('.quiz-grade-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            quizSession.answers.push({ questionId: q.id, isCorrect: btn.dataset.grade === '1' });
+            advanceQuiz();
+          });
+        });
+        return;
+      }
+
+      const isCorrect = scoreQuestion(q, pendingAnswer);
+      quizSession.answers.push({ questionId: q.id, isCorrect });
+
+      let correctDisplay = '';
+      if (q.type === 'mc') {
+        const ca = (q.answers || []).find(a => a.id === q.correctId);
+        correctDisplay = ca ? esc(ca.answer) : '';
+      } else if (q.type === 'ms') {
+        correctDisplay = (q.answers || []).filter(a => (q.correctIds || []).includes(a.id))
+          .map(a => esc(a.answer)).join(', ');
+      }
+
+      quizScreen().innerHTML = `
+        <div class="quiz-feedback-screen">
+          <div class="quiz-progress-line">Question ${currentIdx + 1}  /  ${total}</div>
+          <div class="quiz-result-banner ${isCorrect ? 'correct' : 'incorrect'}">
+            ${isCorrect ? '✓ Correct!' : '✗ Incorrect'}
+          </div>
+          <div class="quiz-question-text">${esc(q.question)}</div>
+          <div class="quiz-correct-answer"><strong>Correct answer:</strong> ${correctDisplay}</div>
+          ${q.explanation ? `<div class="quiz-explanation">${esc(q.explanation)}</div>` : ''}
+          <div class="quiz-nav">
+            <button id="quiz-next-btn" class="quiz-next-btn">${isLast ? 'See Results' : 'Next →'}</button>
+          </div>
+        </div>`;
+      document.getElementById('quiz-next-btn').addEventListener('click', advanceQuiz);
+    }
+
+    function advanceQuiz() {
+      quizSession.currentIdx++;
+      quizSession.pendingAnswer = null;
+      if (quizSession.currentIdx >= quizSession.quiz.questions.length) renderFinish();
+      else renderQuestion();
+    }
+
+    function renderFinish() {
+      const { quiz, answers, quizId } = quizSession;
+      const score = answers.filter(a => a.isCorrect).length;
+      const total = answers.length;
+
+      let reviewHtml = '';
+      for (let i = 0; i < quiz.questions.length; i++) {
+        const q = quiz.questions[i];
+        const a = answers[i];
+        const ok = a && a.isCorrect;
+        reviewHtml += `<div class="quiz-review-item ${ok ? 'correct' : 'incorrect'}">${ok ? '✓' : '✗'} Q${i+1}: ${esc(q.question)}</div>`;
+      }
+
+      quizScreen().innerHTML = `
+        <div class="quiz-finish-screen">
+          <h2>Quiz Complete!</h2>
+          <div class="quiz-score">${score} / ${total}</div>
+          <div class="quiz-review">${reviewHtml}</div>
+          <div class="quiz-nav">
+            <button id="quiz-save-close-btn" class="quiz-next-btn">Save &amp; Close</button>
+          </div>
+        </div>`;
+
+      document.getElementById('quiz-save-close-btn').addEventListener('click', async () => {
+        const docPath = CURRENT_PATH.replace(/^\//, '');
+        try {
+          await fetch('/api/quiz/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ vaultName: VAULT_NAME, docPath, quizId, score, total }),
+          });
+        } catch {}
+        closeQuizModal();
+        const days = 0;
+        document.getElementById('quiz-info').textContent = 'Quiz: ' + score + '/' + total + ' · today';
+      });
+    }
+
+    document.getElementById('quiz-me-btn').addEventListener('click', openQuizModal);
+    document.getElementById('quiz-close-btn').addEventListener('click', closeQuizModal);
+    document.getElementById('quiz-modal').addEventListener('click', e => {
+      if (e.target === document.getElementById('quiz-modal')) closeQuizModal();
+    });
 
     init();
   </script>

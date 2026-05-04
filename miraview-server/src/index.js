@@ -5,6 +5,7 @@ const cookieParser = require('cookie-parser');
 const { bootstrapUsers } = require('./db');
 const { router: authRouter } = require('./auth');
 const readsRouter = require('./reads');
+const quizRouter = require('./quiz');
 
 bootstrapUsers();
 
@@ -14,6 +15,7 @@ app.use(cookieParser());
 
 app.use('/auth', authRouter);
 app.use('/api/reads', readsRouter);
+app.use('/api/quiz', quizRouter);
 
 app.use((req, res) => res.status(404).json({ error: 'Not found' }));
 

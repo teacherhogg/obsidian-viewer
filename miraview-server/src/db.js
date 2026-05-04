@@ -34,6 +34,19 @@ db.exec(`
   );
 
   CREATE INDEX IF NOT EXISTS idx_reads_user_vault ON reads(user_id, vault_name);
+
+  CREATE TABLE IF NOT EXISTS quiz_runs (
+    id         INTEGER PRIMARY KEY,
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    vault_name TEXT NOT NULL,
+    doc_path   TEXT NOT NULL,
+    quiz_id    TEXT NOT NULL,
+    run_at     INTEGER NOT NULL,
+    score      INTEGER NOT NULL,
+    total      INTEGER NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_quiz_runs_user_vault ON quiz_runs(user_id, vault_name, doc_path);
 `);
 
 function bootstrapUsers() {
@@ -62,6 +75,20 @@ const stmts = {
   `),
   getRead: db.prepare('SELECT read_count, last_read FROM reads WHERE user_id = ? AND vault_name = ? AND doc_path = ?'),
   getReadsByVault: db.prepare('SELECT doc_path, read_count, last_read FROM reads WHERE user_id = ? AND vault_name = ?'),
+  insertQuizRun: db.prepare(`
+    INSERT INTO quiz_runs (user_id, vault_name, doc_path, quiz_id, run_at, score, total)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `),
+  getLastQuizRun: db.prepare(`
+    SELECT quiz_id, run_at, score, total FROM quiz_runs
+    WHERE user_id = ? AND vault_name = ? AND doc_path = ?
+    ORDER BY run_at DESC LIMIT 1
+  `),
+  getQuizRunHistory: db.prepare(`
+    SELECT quiz_id, run_at, score, total FROM quiz_runs
+    WHERE user_id = ? AND vault_name = ? AND doc_path = ?
+    ORDER BY run_at DESC
+  `),
 };
 
 module.exports = { db, bootstrapUsers, stmts };
