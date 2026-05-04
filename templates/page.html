@@ -475,6 +475,19 @@
     const VAULT_NAME = {{VAULT_NAME_JSON}};
     const CURRENT_PATH = (() => { try { return decodeURIComponent(location.pathname); } catch { return location.pathname; } })();
 
+    function calendarDaysAgo(ts) {
+      const now = new Date(), read = new Date(ts * 1000);
+      const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const readMid  = new Date(read.getFullYear(), read.getMonth(), read.getDate());
+      return Math.round((todayMid - readMid) / 86400000);
+    }
+    function fmtDate(ts) {
+      const d = new Date(ts * 1000);
+      return d.getFullYear() + '/' +
+        String(d.getMonth() + 1).padStart(2, '0') + '/' +
+        String(d.getDate()).padStart(2, '0');
+    }
+
     // ── Theme ──
     const themeBtn = document.getElementById('theme-toggle-btn');
     function applyTheme(dark) {
@@ -695,7 +708,6 @@
 
     function applyReadDotsToNav() {
       if (!currentUser) return;
-      const now = Math.floor(Date.now() / 1000);
 
       // Apply read/unread badges to file items first
       document.querySelectorAll('.file-item').forEach(el => {
@@ -708,7 +720,7 @@
         el.querySelectorAll('.read-dot, .days-badge, .unread-badge').forEach(b => b.remove());
 
         if (vaultReads && vaultReads[docPath]) {
-          const days = Math.floor((now - vaultReads[docPath].lastRead) / 86400);
+          const days = calendarDaysAgo(vaultReads[docPath].lastRead);
           const daysText = days === 0 ? '0d' : `${days}d`;
           el.insertAdjacentHTML('beforeend',
             `<span class="read-dot" title="Read">✓</span>` +
@@ -733,14 +745,13 @@
     function updateShowcaseCards() {
       const cards = document.querySelectorAll('[data-doc-path]');
       if (!cards.length) return;
-      const now = Math.floor(Date.now() / 1000);
       cards.forEach(card => {
         const caption = card.querySelector('.read-caption');
         if (!caption) return;
         if (!currentUser) return;
         const docPath = card.getAttribute('data-doc-path');
         if (vaultReads && vaultReads[docPath]) {
-          const days = Math.floor((now - vaultReads[docPath].lastRead) / 86400);
+          const days = calendarDaysAgo(vaultReads[docPath].lastRead);
           caption.textContent = days === 0 ? 'Read today' : `Last Read: ${days} day${days !== 1 ? 's' : ''} ago`;
           caption.classList.remove('never-read');
         } else {
@@ -765,9 +776,9 @@
         if (data.read) {
           btn.textContent = 'Read again';
           btn.classList.add('read');
-          const dDays = Math.floor((Date.now() / 1000 - data.lastRead) / 86400);
+          const dDays = calendarDaysAgo(data.lastRead);
           const dAgo = dDays === 0 ? 'today' : `${dDays} day${dDays !== 1 ? 's' : ''} ago`;
-          info.textContent = 'Read ' + data.readCount + '× · Last: ' + new Date(data.lastRead * 1000).toLocaleDateString() + ' (' + dAgo + ')';
+          info.textContent = 'Read ' + data.readCount + '× · Last: ' + fmtDate(data.lastRead) + ' (' + dAgo + ')';
         } else {
           btn.textContent = 'Mark as read';
           btn.classList.remove('read');
@@ -791,9 +802,9 @@
         const info = document.getElementById('read-info');
         btn.textContent = 'Read again';
         btn.classList.add('read');
-        const mDays = Math.floor((Date.now() / 1000 - data.lastRead) / 86400);
+        const mDays = calendarDaysAgo(data.lastRead);
         const mAgo = mDays === 0 ? 'today' : `${mDays} day${mDays !== 1 ? 's' : ''} ago`;
-        info.textContent = 'Read ' + data.readCount + '× · Last: ' + new Date(data.lastRead * 1000).toLocaleDateString() + ' (' + mAgo + ')';
+        info.textContent = 'Read ' + data.readCount + '× · Last: ' + fmtDate(data.lastRead) + ' (' + mAgo + ')';
         if (!vaultReads) vaultReads = {};
         vaultReads[docPath] = { readCount: data.readCount, lastRead: data.lastRead };
         applyReadDotsToNav();
