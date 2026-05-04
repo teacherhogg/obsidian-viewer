@@ -696,6 +696,8 @@
     function applyReadDotsToNav() {
       if (!currentUser) return;
       const now = Math.floor(Date.now() / 1000);
+
+      // Apply read/unread badges to file items first
       document.querySelectorAll('.file-item').forEach(el => {
         const href = el.getAttribute('href') || '';
         const rawPath = href.startsWith(ROOT_PREFIX)
@@ -703,7 +705,6 @@
           : href.replace(/^\//, '');
         const docPath = (() => { try { return decodeURIComponent(rawPath); } catch { return rawPath; } })();
 
-        // Remove any existing read/unread badges before re-applying
         el.querySelectorAll('.read-dot, .days-badge, .unread-badge').forEach(b => b.remove());
 
         if (vaultReads && vaultReads[docPath]) {
@@ -715,6 +716,15 @@
           );
         } else {
           el.insertAdjacentHTML('beforeend', '<span class="unread-badge" title="Never read">⬤</span>');
+        }
+      });
+
+      // Bubble unread badge up to folder items if any descendant file is unread
+      document.querySelectorAll('.dir-item').forEach(el => {
+        el.querySelectorAll('.unread-badge').forEach(b => b.remove());
+        const children = el.nextElementSibling; // .tree-children sibling
+        if (children && children.querySelector('.file-item .unread-badge')) {
+          el.insertAdjacentHTML('beforeend', '<span class="unread-badge" title="Contains unread articles">⬤</span>');
         }
       });
     }
